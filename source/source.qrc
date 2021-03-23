@@ -1,0 +1,28 @@
+<RCC>
+  <qresource prefix="icon">
+    <file>template.png</file>
+    <file>predict.png</file>
+    <file>compare.png</file>
+    <file>record.png</file>
+    <file>slower.png</file>
+    <file>faster.png</file>
+    <file>pause.png</file>
+    <file>play.png</file>
+    <file>ip.png</file>
+    <file>password.png</file>
+    <file>resource.png</file>
+    <file>user.png</file>
+    <file>log.png</file>
+    <file>export.png</file>
+    <file>about.png</file>
+    <file>run.png</file>
+    <file>close.png</file>
+    <file>input.png</file>
+    <file>save.png</file>
+    <file>setting.png</file>
+    <file>mainwindow.png</file>
+  </qresource>
+  <qresource prefix="image">
+    <file>QRcode.JPG</file>
+  </qresource>
+</RCC>
