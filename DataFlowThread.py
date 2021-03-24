@@ -317,7 +317,10 @@ class DataFlowThread(QThread):
         if ret == 0:
             if 0x01080001 == self.nPixelFormat:
                 data_mono_arr = np.array(self.data_buf).reshape(stFrameInfo.nHeight, stFrameInfo.nWidth)
-                self.super_UI.io_queue.put([data_mono_arr, self.needle_direction, self.needle_row, self.needle_col])
+                # 测试图片程序入口
+                # self.super_UI.io_queue.put([data_mono_arr, self.needle_direction, self.needle_row, self.needle_col])
+                # 预测程序入口
+                self.super_UI.predict_queue.put([data_mono_arr, self.needle_direction, self.needle_row, self.needle_col])
                 # TODO: 显示帧
                 if self.frame_count > cur_frame.fCurValue // const.RESULTING_FRAME_RATE:
                     self.show_image_to_label(data_mono_arr, self.super_UI.input_label, const.GRAY2RGB)

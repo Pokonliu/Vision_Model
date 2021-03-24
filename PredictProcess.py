@@ -2,8 +2,9 @@ import os
 import numpy as np
 import cv2.cv2 as cv2
 import cv2.dnn as dnn
-import Serialization
 import tensorflow as tf
+import utils
+import Serialization
 from const import const
 
 
@@ -51,16 +52,27 @@ def predict_process(predictQueue, predictProcessFlag, sequenceFileName):
     save_sequence_file_flag = True
     images = []
     while True:
+        # TODO：初始化三组绝对坐标
+        for i in range(const.PREDICT_DIRECTION_COUNT):
+            # TODO：第一次读取图片，从串口获取对应图片序号，通过图像预处理方式来确定三个取像区域的绝对坐标
+            img_index = 1
+            image_coordinate = 1
+            start_coordinate_x, start_coordinate_y = calculate_absolute_coordinate(img_index, image_coordinate, utils.read_csv(const.COORDINATE_FILES[i]))
         try:
             while predict_flag.value or not predict_queue.empty():
                 save_sequence_file_flag = True
                 if not predict_queue.empty():
                     print("queue:", predict_queue.qsize())
-                    image_data = predict_queue.get()
-                    for i in range(const.CROP_COUNT):
-                        cropped_region = image_data[const.STARTING_COORDINATES[1]: const.STARTING_COORDINATES[1] + 100,
-                                                    const.STARTING_COORDINATES[0] + const.NEEDLE_GRID_WIDTH * i: const.STARTING_COORDINATES[0] + const.NEEDLE_GRID_WIDTH * (i + 1)]
-                        images.append(cv2.resize(src=cropped_region, dsize=(118, 64)))
+                    image_data, direction, row, col = predict_queue.get()
+                    cur_image_index = (col - const.START_IMAGE_NUMBER) // 8
+
+                    for i in range(const.PREDICT_DIRECTION_COUNT):
+                        rotate_image = utils.rotate_image(image_data, const.PREDICT_ANGELS[i])
+                        for j in range(const.CROP_COUNT):
+                            cropped_region = rotate_image[const.STARTING_COORDINATES[1]: const.STARTING_COORDINATES[1] + const.NEEDLE_GRID_HIGH,
+                                                          const.STARTING_COORDINATES[0] + const.NEEDLE_GRID_WIDTH * j: const.STARTING_COORDINATES[0] + const.NEEDLE_GRID_WIDTH * (j + 1)]
+                            images.append(cropped_region)
+
                 if len(images) > 500:
                     images = np.array(images)
                     cv_out = net_work.predict(images)
@@ -73,6 +85,24 @@ def predict_process(predictQueue, predictProcessFlag, sequenceFileName):
         except Exception as error:
             print("Predict error occurred {}".format(error))
 
+
+def calculate_absolute_coordinate(number_m, absolute_location_m, relative_coordinates):
+    # 首先要知道第一张图的序号，最左端图像的序号number_0
+    # eg:
+    number_0 = -100
+    # 绝对坐标列表
+    absolute_locations = []
+    # 每个1/4个周期记为1次，8个1/4周期记一次数,计算每个序号下图像对应的索引
+    img_index = (number_m - number_0) / 8
+    # 读取坐标模板中对应的x方向的相对坐标
+    relative_x_m = relative_coordinates[img_index]
+    # 得到坐标模板的总长度，遍历每一个索引，求出绝对坐标
+    for i in range(len(relative_coordinates)):
+        # 如果索引中图像相对0的坐标值比传入图像相对0的坐标值小，表示向左移动，x值变小，即减去
+        absolute_location_i = absolute_location_m - (relative_x_m - int(relative_coordinates[i]))
+        absolute_locations.append(absolute_location_i)
+    # 返回绝对坐标列表
+    return absolute_locations
 
 # if __name__ == '__main__':
     # import tensorflow as tf

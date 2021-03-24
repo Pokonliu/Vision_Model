@@ -4,6 +4,7 @@ import cv2.cv2 as cv2
 from const import const
 
 
+# TODO：IO Process后期在采集速率与预测速率达到一致后废弃
 def io_process(ioQueue, predictQueue, ioProcessFlag, imageDefaultPath):
     print("I/O 进程开始执行")
     if not os.path.exists(imageDefaultPath.value):

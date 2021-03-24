@@ -81,9 +81,6 @@ class SerialPortThread(QThread):
 
         self.data_length = 0
         self.data_command = 0
-        self.data_list = []
-
-        self.counts = 0
 
     def run(self) -> None:
         serial_port_function_point = {const.SERIAL_PORT_IDLE: self.serial_port_idle,
@@ -151,8 +148,6 @@ class SerialPortThread(QThread):
         res, data = self.serial_port.read(self.data_length)
         if res:
             # TODO: 数据处理
-            # self.counts += 1
-
             row = int.from_bytes(data[: 4], byteorder='big', signed=False)
             col = int.from_bytes(data[4: 6], byteorder='big', signed=True)
             direction = "S"

@@ -43,14 +43,18 @@ const.IO_PROCESS_STOPPING = 0
 const.TOP_SIDE_ANGLE = 13
 const.SCALE_RATIO = 1
 const.FILLING_COLOR = 0
-const.CROP_COUNT = 7
+const.CROP_COUNT = 4
 const.NEEDLE_GRID_WIDTH = 31
-const.NEEDLE_GRID_HIGH = 100
+const.NEEDLE_GRID_HIGH = 70
 const.STARTING_COORDINATES = (206, 96)
+const.START_IMAGE_NUMBER = -2014
 
 # Train params
 const.MODEL_PATH = "./stf_new_model/threeLayers.pb"
 const.TF_MODEL_PATH = "./stf_new_model"
+const.PREDICT_DIRECTION_COUNT = 1
+const.PREDICT_ANGELS = [13, None, None]
+const.COORDINATE_FILES = ["top.csv", None, None]
 
 # Image convert
 const.GRAY2RGB = cv2.COLOR_GRAY2RGB

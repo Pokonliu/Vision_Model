@@ -2,9 +2,10 @@
 Common utility functions
 """
 import os
+import re
+import math
 import cv2.cv2 as cv2
-import time
-import numpy as np
+import pandas as pd
 
 
 def split_hex(hex_str):
@@ -27,6 +28,32 @@ def lowercase_to_uppercase(lineEdit):
     lineEdit.setText(lineEdit.text().upper())
 
 
+def rotate_image(src, angle):
+    height, width = src.shape[:2]
+    center_X, center_Y = width / 2, height / 2
+
+    transform_element = cv2.getRotationMatrix2D(center=(center_X, center_Y), angle=angle, scale=1)
+    cos = math.fabs(transform_element[0, 0])
+    sin = math.fabs(transform_element[0, 1])
+
+    height_new = int(width * sin + height * cos)
+    width_new = int(height * sin + width * cos)
+
+    transform_element[0, 2] += width_new / 2 - center_X
+    transform_element[1, 2] += height_new / 2 - center_Y
+
+    return cv2.warpAffine(src, M=transform_element, dsize=(width_new, height_new), borderValue=0)
+
+
+def read_csv(file_path):
+    data = pd.read_csv(file_path)
+    data = data.loc[2:]
+    relative_coordinate = []
+    for index, item in data.iterrows():
+        relative_coordinate.append(eval(item["mid point"])["MIDDLE"])
+    return relative_coordinate
+
+
 # TODO test文件保存函数 后期删除
 def save_image_by_needle(image, direction, col, row):
     default_path = r"C:\test\temp\D{}C{}".format(direction, col)
@@ -35,20 +62,5 @@ def save_image_by_needle(image, direction, col, row):
     cv2.imwrite(os.path.join(default_path, "R{}.bmp".format(row)), image)
 
 
-# if __name__ == '__main__':
-#     src = cv2.imread('./R3152.jpg', cv2.IMREAD_GRAYSCALE)
-#
-#     io_time = 0
-#     a = time.time()
-#     for i in range(10000):
-#         default_path = r"C:\test\temp2\D{}C{}".format('T', str(i))
-#         if not os.path.exists(default_path):
-#             os.makedirs(default_path)
-#         tar = os.path.join(default_path, "R{}.bmp".format('1'))
-#         start = time.time()
-#         cv2.imwrite(tar, src)
-#         end = time.time()
-#         io_time += (end - start)
-#     b = time.time()
-#     print(io_time)
-#     print(b - a)
+if __name__ == '__main__':
+    print(read_csv("./final_坐标模板.csv"))
