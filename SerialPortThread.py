@@ -49,7 +49,7 @@ class Communication:
 
     def read(self, size=1):
         if self.com.in_waiting:
-            print("cache:", self.com.in_waiting)
+            # print("cache:", self.com.in_waiting)
             return True, self.com.read(size)
         return False, None
 
@@ -151,10 +151,10 @@ class SerialPortThread(QThread):
         res, data = self.serial_port.read(self.data_length)
         if res:
             # TODO: 数据处理
-            self.counts += 1
+            # self.counts += 1
 
             row = int.from_bytes(data[: 4], byteorder='big', signed=False)
-            col = int.from_bytes(data[4: 6], byteorder='big', signed=False) + self.counts
+            col = int.from_bytes(data[4: 6], byteorder='big', signed=True)
             direction = "S"
             if self.data_command == 160:
                 direction = "L"

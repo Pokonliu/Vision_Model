@@ -97,6 +97,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         command_hex_reg_validator = QtGui.QRegExpValidator(self)
         command_hex_reg_validator.setRegExp(command_hex_reg)
         self.command_line_edit.setValidator(command_hex_reg_validator)
+
         data_hex_reg = QRegExp('^[0-9a-fA-F]{1,}$')
         data_hex_reg_validator = QtGui.QRegExpValidator(self)
         data_hex_reg_validator.setRegExp(data_hex_reg)
@@ -201,7 +202,6 @@ class MyWindow(QMainWindow, Ui_MainWindow):
 
     def predict_push_button_clicked(self, sequence_save_file_name):
         if self.model_flag:
-
             self.sequence_file_name.value = sequence_save_file_name
             self.io_process_flag.value = const.IO_PROCESS_STARTING
             self.predict_process_flag.value = const.PREDICT_PROCESS_STARTING

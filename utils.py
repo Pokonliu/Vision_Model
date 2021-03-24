@@ -29,7 +29,7 @@ def lowercase_to_uppercase(lineEdit):
 
 # TODO test文件保存函数 后期删除
 def save_image_by_needle(image, direction, col, row):
-    default_path = r"D:\test\temp1\D{}C{}".format(direction, col)
+    default_path = r"C:\test\temp\D{}C{}".format(direction, col)
     if not os.path.exists(default_path):
         os.makedirs(default_path)
     cv2.imwrite(os.path.join(default_path, "R{}.bmp".format(row)), image)

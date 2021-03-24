@@ -50,6 +50,7 @@ const.STARTING_COORDINATES = (206, 96)
 
 # Train params
 const.MODEL_PATH = "./stf_new_model/threeLayers.pb"
+const.TF_MODEL_PATH = "./stf_new_model"
 
 # Image convert
 const.GRAY2RGB = cv2.COLOR_GRAY2RGB

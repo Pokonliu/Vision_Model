@@ -215,24 +215,34 @@ class DataFlowThread(QThread):
                 print("Warning: Get Packet Size fail! ret[0x%x]" % nPacketSize)
 
         # 设置触发模式为ON
-        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerMode", MV_TRIGGER_MODE_OFF)
+        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerMode", MV_TRIGGER_MODE_ON)
         if ret != 0:
             print("set trigger mode fail! ret[0x%x]" % ret)
 
-        # # 设置触发源为Line0
-        # ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerSource", MV_TRIGGER_SOURCE_LINE0)
-        # if ret != 0:
-        #     print("set trigger source fail! ret[0x%x]" % ret)
-        #
-        # # 设置触发源为上升沿
-        # ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerActivation", 0)
-        # if ret != 0:
-        #     print("set trigger activation fail! ret[0x%x]" % ret)
-        #
-        # # 设置线路防抖时间为1us
-        # ret = self.GigE_camera.MV_CC_SetIntValue("LineDebouncerTime", 1)
-        # if ret != 0:
-        #     print("set line debouncer time fail! ret[0x%x]" % ret)
+        # 设置触发源为Line0
+        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerSource", MV_TRIGGER_SOURCE_LINE0)
+        if ret != 0:
+            print("set trigger source fail! ret[0x%x]" % ret)
+
+        # 设置触发源为上升沿
+        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerActivation", 0)
+        if ret != 0:
+            print("set trigger activation fail! ret[0x%x]" % ret)
+
+        # 设置线路防抖时间为1us
+        ret = self.GigE_camera.MV_CC_SetIntValue("LineDebouncerTime", 1)
+        if ret != 0:
+            print("set line debouncer time fail! ret[0x%x]" % ret)
+
+        # 设置 GEV SCPD值来满足最大最大帧率运行
+        ret = self.GigE_camera.MV_CC_SetIntValue("GevSCPD", 400)
+        if ret != 0:
+            print("set line Gev SCPD fail! ret[0x%x]" % ret)
+
+        # 设置曝光时间
+        ret = self.GigE_camera.MV_CC_SetFloatValue("ExposureTime", 50.0)
+        if ret != 0:
+            print("set line Exposure Time fail! ret[0x%x]" % ret)
 
         # 获取数据包大小
         stParam = MVCC_INTVALUE()
@@ -269,8 +279,8 @@ class DataFlowThread(QThread):
                     self.show_image_to_label(frame, self.super_UI.input_label, const.BGR2RGB)
                     transform_element = cv2.getRotationMatrix2D(center=(self.video_width / 2, self.video_high / 2), angle=const.TOP_SIDE_ANGLE, scale=const.SCALE_RATIO)
                     spin_image = cv2.warpAffine(frame, transform_element, (self.video_width, self.video_high), borderValue=const.FILLING_COLOR)
-                    if self.super_UI.io_process_flag.value == const.IO_PROCESS_STARTING:
-                        self.super_UI.io_queue.put(spin_image)
+                    if self.super_UI.predict_process_flag.value == const.PREDICT_PROCESS_STARTING:
+                        self.super_UI.predict_queue.put(spin_image)
 
                     # 后期落地可以删除
                     for i in range(const.CROP_COUNT):
