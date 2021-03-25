@@ -341,15 +341,15 @@ border-radius: 4px;
          <item>
           <widget class="QTabWidget" name="tabWidget">
            <property name="currentIndex">
-            <number>2</number>
+            <number>0</number>
            </property>
-           <widget class="QWidget" name="tab_current">
+           <widget class="QWidget" name="predict_res_tab">
             <attribute name="title">
              <string>Predict result</string>
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_5">
              <item>
-              <widget class="QTableWidget" name="tableWidget_current">
+              <widget class="QTableWidget" name="predict_res_tableWidget">
                <property name="font">
                 <font>
                  <family>等线</family>
@@ -411,13 +411,13 @@ border-radius: 4px;
              </item>
             </layout>
            </widget>
-           <widget class="QWidget" name="tab_total">
+           <widget class="QWidget" name="template_file_tab">
             <attribute name="title">
              <string>Template file</string>
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_3">
              <item>
-              <widget class="QTableWidget" name="tableWidget_total">
+              <widget class="QTableWidget" name="template_file_tableWidget">
                <property name="font">
                 <font>
                  <family>等线</family>
@@ -572,6 +572,9 @@ border-radius: 4px;
             <width>50</width>
             <height>50</height>
            </size>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
           </property>
           <property name="flat">
            <bool>true</bool>

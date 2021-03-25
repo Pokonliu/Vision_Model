@@ -277,16 +277,17 @@ class DataFlowThread(QThread):
                 ret, frame = self.video_src.read()
                 if ret:
                     self.show_image_to_label(frame, self.super_UI.input_label, const.BGR2RGB)
-                    transform_element = cv2.getRotationMatrix2D(center=(self.video_width / 2, self.video_high / 2), angle=const.TOP_SIDE_ANGLE, scale=const.SCALE_RATIO)
-                    spin_image = cv2.warpAffine(frame, transform_element, (self.video_width, self.video_high), borderValue=const.FILLING_COLOR)
-                    if self.super_UI.predict_process_flag.value == const.PREDICT_PROCESS_STARTING:
-                        self.super_UI.predict_queue.put(spin_image)
 
                     # 后期落地可以删除
-                    for i in range(const.CROP_COUNT):
-                        cv2.rectangle(img=spin_image, pt1=(const.STARTING_COORDINATES[0], const.STARTING_COORDINATES[1]),
-                                      pt2=(const.STARTING_COORDINATES[0] + const.NEEDLE_GRID_WIDTH * (i + 1), const.STARTING_COORDINATES[1] + 100), color=(255, 100, 100), thickness=1)
-                    self.show_image_to_label(spin_image, self.super_UI.output_label, const.BGR2RGB)
+                    # transform_element = cv2.getRotationMatrix2D(center=(self.video_width / 2, self.video_high / 2), angle=const.TOP_SIDE_ANGLE, scale=const.SCALE_RATIO)
+                    # spin_image = cv2.warpAffine(frame, transform_element, (self.video_width, self.video_high), borderValue=const.FILLING_COLOR)
+                    # if self.super_UI.predict_process_flag.value == const.PREDICT_PROCESS_STARTING:
+                    #     self.super_UI.predict_queue.put(spin_image)
+
+                    # for i in range(const.CROP_COUNT):
+                    #     cv2.rectangle(img=spin_image, pt1=(const.STARTING_COORDINATES[0], const.STARTING_COORDINATES[1]),
+                    #                   pt2=(const.STARTING_COORDINATES[0] + const.NEEDLE_GRID_WIDTH * (i + 1), const.STARTING_COORDINATES[1] + 100), color=(255, 100, 100), thickness=1)
+                    # self.show_image_to_label(spin_image, self.super_UI.output_label, const.BGR2RGB)
                 else:
                     self.data_flow_flag = const.DATA_FLOW_RELEASE
                 self.cur_frame_num += 1
@@ -320,8 +321,10 @@ class DataFlowThread(QThread):
                 # 测试图片程序入口
                 # self.super_UI.io_queue.put([data_mono_arr, self.needle_direction, self.needle_row, self.needle_col])
                 # 预测程序入口
-                self.super_UI.predict_queue.put([data_mono_arr, self.needle_direction, self.needle_row, self.needle_col])
-                # TODO: 显示帧
+                if self.super_UI.predict_process_flag.value:
+                    self.super_UI.predict_queue.put([data_mono_arr, self.needle_direction, self.needle_row, self.needle_col])
+
+                # TODO: 显示帧率设置为30帧防止界面卡死
                 if self.frame_count > cur_frame.fCurValue // const.RESULTING_FRAME_RATE:
                     self.show_image_to_label(data_mono_arr, self.super_UI.input_label, const.GRAY2RGB)
                     self.frame_count = 0

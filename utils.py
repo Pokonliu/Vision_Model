@@ -2,7 +2,6 @@
 Common utility functions
 """
 import os
-import re
 import math
 import cv2.cv2 as cv2
 import pandas as pd
@@ -45,6 +44,10 @@ def rotate_image(src, angle):
     return cv2.warpAffine(src, M=transform_element, dsize=(width_new, height_new), borderValue=0)
 
 
+def scale_image(src, scale):
+    return cv2.resize(src, dsize=(0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_LINEAR)
+
+
 def read_csv(file_path):
     data = pd.read_csv(file_path)
     data = data.loc[2:]
@@ -54,13 +57,27 @@ def read_csv(file_path):
     return relative_coordinate
 
 
+def compare(root_path, src_file_name, target_file_name):
+    error_index = []
+    try:
+        with open(os.path.join(root_path, src_file_name), "r") as template:
+            src_data = template.read()
+        with open(os.path.join(root_path, target_file_name), "r") as template:
+            target_data = template.read()
+    except Exception as error:
+        return False, error_index, "读取文件错误, %s" % error
+    if len(src_data) != len(target_data):
+        return False, error_index, "两次编制针数不一致"
+    for i in range(len(src_data)):
+        if src_data[i] != target_data[i]:
+            error_index.append(i)
+    ratio = (len(src_data) - len(error_index)) * 100 // len(src_data)
+    return True, error_index, ratio
+
+
 # TODO test文件保存函数 后期删除
 def save_image_by_needle(image, direction, col, row):
     default_path = r"C:\test\temp\D{}C{}".format(direction, col)
     if not os.path.exists(default_path):
         os.makedirs(default_path)
     cv2.imwrite(os.path.join(default_path, "R{}.bmp".format(row)), image)
-
-
-if __name__ == '__main__':
-    print(read_csv("./final_坐标模板.csv"))

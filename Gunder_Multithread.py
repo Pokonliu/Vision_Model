@@ -7,7 +7,7 @@ import cv2.cv2 as cv2
 from ctypes import c_char_p
 from multiprocessing import Process, Value, Queue, Manager, freeze_support
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import QMainWindow, QAbstractItemView, QMessageBox, QFileDialog, QApplication
+from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 # User-defined library
@@ -43,8 +43,6 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         # 串口处理线程
         self.serial_port_thread = SerialPortThread(self)
         self.serial_port_thread.start()
-
-        self.test_image = cv2.imread('./Test/R2878.jpg', cv2.IMREAD_GRAYSCALE)
 
         # 进程参数
         self.io_queue = Queue()
@@ -87,6 +85,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         self.model_flag = True
         self.train_push_Button.clicked.connect(lambda: self.model_running("Template.txt"))
         self.predict_push_button.clicked.connect(lambda: self.predict_push_button_clicked("spin001.txt"))
+        self.compare_push_button.clicked.connect(self.compare_push_button_clicked)
 
         # Serial port相关按键信号槽绑定
         self.send_push_button.clicked.connect(self.send_data_to_serial_port)
@@ -109,10 +108,10 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         self.tableWidget_total.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tableWidget_current.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
-        # TODO：测试代码
-        self.io_process_flag.value = const.IO_PROCESS_STARTING
-        if not self.io_process.is_alive():
-            self.io_process.start()
+        # # TODO：测试代码
+        # self.io_process_flag.value = const.IO_PROCESS_STARTING
+        # if not self.io_process.is_alive():
+        #     self.io_process.start()
 
     '''Action bar signal slot callback function'''
     def save_action_trigger(self):
@@ -181,36 +180,28 @@ class MyWindow(QMainWindow, Ui_MainWindow):
 
     '''Model train/predict/compare signal slot callback function'''
     def model_running(self, sequence_save_file_name):
-        print(sequence_save_file_name)
         if self.train_push_Button.isChecked():
             self.sequence_file_name.value = sequence_save_file_name
-
-            # 启动IO线程
-            self.io_process_flag.value = const.IO_PROCESS_STARTING
-            if not self.io_process.is_alive():
-                self.io_process.start()
             # 启动预测线程
             self.predict_process_flag.value = const.PREDICT_PROCESS_STARTING
             if not self.predict_process.is_alive():
                 self.predict_process.start()
-            self.play_action_trigger()
-
         else:
-            self.play_action_trigger()
-            self.io_process_flag.value = const.IO_PROCESS_STOPPING
             self.predict_process_flag.value = const.PREDICT_PROCESS_STOPPING
 
     def predict_push_button_clicked(self, sequence_save_file_name):
-        if self.model_flag:
+        if self.predict_push_button.isChecked():
             self.sequence_file_name.value = sequence_save_file_name
-            self.io_process_flag.value = const.IO_PROCESS_STARTING
             self.predict_process_flag.value = const.PREDICT_PROCESS_STARTING
-            self.play_action_trigger()
             self.model_flag = False
         else:
-            self.play_action_trigger()
-            self.io_process_flag.value = const.IO_PROCESS_STOPPING
             self.predict_process_flag.value = const.PREDICT_PROCESS_STOPPING
+
+    # TODO: 后期需要加入选择模板的功能
+    def compare_push_button_clicked(self):
+        res, error_index, correct_rate = utils.compare('./temp/serializations', "spin001.txt", "Template.txt")
+        # QTableWidgetItem("{}%".format(correct_rate))
+        # self.predict_res_tableWidget.
 
     '''Video signal slot callback function'''
     # 视频播放信号槽回调函数
@@ -242,11 +233,11 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         self.data_flow_thread.video_control_flag = const.VIDEO_SLIDER_MOVED_FLAG
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
-        print('close')
         self.retreat_safely()
 
     def retreat_safely(self):
         # Camera安全退出
+        print('close')
         # TODO：如果没有选Camera就会奔溃(必现BUG)
         if self.data_flow_thread.source_type in [const.SOURCE_TYPE_VIDEO, const.SOURCE_TYPE_USB, const.SOURCE_TYPE_GIGE]:
             self.data_flow_thread.data_flow_flag = const.DATA_FLOW_RELEASE
