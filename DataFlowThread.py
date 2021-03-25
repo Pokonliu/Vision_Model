@@ -2,11 +2,11 @@ import os
 import time
 import cv2.cv2 as cv2
 import numpy as np
+import utils
 from const import const
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from MvImport.MvCameraControl_class import *
-import datetime
 
 
 class DataFlowThread(QThread):
@@ -215,24 +215,24 @@ class DataFlowThread(QThread):
                 print("Warning: Get Packet Size fail! ret[0x%x]" % nPacketSize)
 
         # 设置触发模式为ON
-        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerMode", MV_TRIGGER_MODE_ON)
+        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerMode", MV_TRIGGER_MODE_OFF)
         if ret != 0:
             print("set trigger mode fail! ret[0x%x]" % ret)
 
-        # 设置触发源为Line0
-        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerSource", MV_TRIGGER_SOURCE_LINE0)
-        if ret != 0:
-            print("set trigger source fail! ret[0x%x]" % ret)
-
-        # 设置触发源为上升沿
-        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerActivation", 0)
-        if ret != 0:
-            print("set trigger activation fail! ret[0x%x]" % ret)
-
-        # 设置线路防抖时间为1us
-        ret = self.GigE_camera.MV_CC_SetIntValue("LineDebouncerTime", 1)
-        if ret != 0:
-            print("set line debouncer time fail! ret[0x%x]" % ret)
+        # # 设置触发源为Line0
+        # ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerSource", MV_TRIGGER_SOURCE_LINE0)
+        # if ret != 0:
+        #     print("set trigger source fail! ret[0x%x]" % ret)
+        #
+        # # 设置触发源为上升沿
+        # ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerActivation", 0)
+        # if ret != 0:
+        #     print("set trigger activation fail! ret[0x%x]" % ret)
+        #
+        # # 设置线路防抖时间为1us
+        # ret = self.GigE_camera.MV_CC_SetIntValue("LineDebouncerTime", 1)
+        # if ret != 0:
+        #     print("set line debouncer time fail! ret[0x%x]" % ret)
 
         # 设置 GEV SCPD值来满足最大最大帧率运行
         ret = self.GigE_camera.MV_CC_SetIntValue("GevSCPD", 400)
@@ -322,7 +322,9 @@ class DataFlowThread(QThread):
                 # self.super_UI.io_queue.put([data_mono_arr, self.needle_direction, self.needle_row, self.needle_col])
                 # 预测程序入口
                 if self.super_UI.predict_process_flag.value:
-                    self.super_UI.predict_queue.put([data_mono_arr, self.needle_direction, self.needle_row, self.needle_col])
+                    # TODO: 网络为3通道input，将单通道图像堆叠为三通道输入，后期移除
+                    image_data = np.stack((data_mono_arr, data_mono_arr, data_mono_arr), axis=-1)
+                    self.super_UI.predict_queue.put([image_data, self.needle_direction, self.needle_row, self.needle_col])
 
                 # TODO: 显示帧率设置为30帧防止界面卡死
                 if self.frame_count > cur_frame.fCurValue // const.RESULTING_FRAME_RATE:

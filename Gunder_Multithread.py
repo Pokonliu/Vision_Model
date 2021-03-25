@@ -105,13 +105,16 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         self.serial_port_thread.serial_port_receive_signal.connect(self.receive_data_from_serial_port)
 
         # Result table属性设置
-        self.tableWidget_total.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableWidget_current.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.predict_res_tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.template_file_tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         # # TODO：测试代码
         # self.io_process_flag.value = const.IO_PROCESS_STARTING
         # if not self.io_process.is_alive():
         #     self.io_process.start()
+
+        if not self.predict_process.is_alive():
+            self.predict_process.start()
 
     '''Action bar signal slot callback function'''
     def save_action_trigger(self):
@@ -184,8 +187,6 @@ class MyWindow(QMainWindow, Ui_MainWindow):
             self.sequence_file_name.value = sequence_save_file_name
             # 启动预测线程
             self.predict_process_flag.value = const.PREDICT_PROCESS_STARTING
-            if not self.predict_process.is_alive():
-                self.predict_process.start()
         else:
             self.predict_process_flag.value = const.PREDICT_PROCESS_STOPPING
 

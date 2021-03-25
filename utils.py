@@ -53,7 +53,7 @@ def read_csv(file_path):
     data = data.loc[2:]
     relative_coordinate = []
     for index, item in data.iterrows():
-        relative_coordinate.append(eval(item["mid point"])["MIDDLE"])
+        relative_coordinate.append(eval(item["guideline"])["MIDDLE"])
     return relative_coordinate
 
 
