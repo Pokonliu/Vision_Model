@@ -215,24 +215,24 @@ class DataFlowThread(QThread):
                 print("Warning: Get Packet Size fail! ret[0x%x]" % nPacketSize)
 
         # 设置触发模式为ON
-        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerMode", MV_TRIGGER_MODE_OFF)
+        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerMode", MV_TRIGGER_MODE_ON)
         if ret != 0:
             print("set trigger mode fail! ret[0x%x]" % ret)
 
-        # # 设置触发源为Line0
-        # ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerSource", MV_TRIGGER_SOURCE_LINE0)
-        # if ret != 0:
-        #     print("set trigger source fail! ret[0x%x]" % ret)
-        #
-        # # 设置触发源为上升沿
-        # ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerActivation", 0)
-        # if ret != 0:
-        #     print("set trigger activation fail! ret[0x%x]" % ret)
-        #
-        # # 设置线路防抖时间为1us
-        # ret = self.GigE_camera.MV_CC_SetIntValue("LineDebouncerTime", 1)
-        # if ret != 0:
-        #     print("set line debouncer time fail! ret[0x%x]" % ret)
+        # 设置触发源为Line0
+        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerSource", MV_TRIGGER_SOURCE_LINE0)
+        if ret != 0:
+            print("set trigger source fail! ret[0x%x]" % ret)
+
+        # 设置触发源为上升沿
+        ret = self.GigE_camera.MV_CC_SetEnumValue("TriggerActivation", 0)
+        if ret != 0:
+            print("set trigger activation fail! ret[0x%x]" % ret)
+
+        # 设置线路防抖时间为1us
+        ret = self.GigE_camera.MV_CC_SetIntValue("LineDebouncerTime", 1)
+        if ret != 0:
+            print("set line debouncer time fail! ret[0x%x]" % ret)
 
         # 设置 GEV SCPD值来满足最大最大帧率运行
         ret = self.GigE_camera.MV_CC_SetIntValue("GevSCPD", 400)
