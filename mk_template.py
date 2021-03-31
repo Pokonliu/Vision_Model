@@ -5,7 +5,7 @@ import utils
 
 
 ANGLE = 56.5
-TARGET_PATH = r"G:\temp-1"
+TARGET_PATH = r"F:\learning\Data\temp-1"
 
 # 比例变换：174 pixel：1 cm：10 mm
 # 针格的长度：1.81 mm: 31.494 pixel
@@ -137,10 +137,12 @@ def make_template(root_path, start_index, cycle, angle, L_line, R_line):
 
     # 制作朝左运动的偏移量表
     while True:
+        print("开始制作左向数据")
         res = calibration_images("./left.csv", root_path, left_direction_file_set, L_line, angle, "L")
         if not res:
             # 正常退出
             return None
+        print("开始制作右向数据")
         res = calibration_images("./right.csv", root_path, right_direction_file_set, R_line, angle, "R")
         break
 
