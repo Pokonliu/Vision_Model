@@ -74,7 +74,7 @@ def get_group_image(root_path, start_index, cycle, line_num, direction):
         else:
             print("{} not exist, please check original data".format(dir_name))
         start_index += cycle if direction == "L" else -cycle
-    print(result)
+    print(result.keys())
     return result
 
 
@@ -99,12 +99,15 @@ def stitching_picture(group_of_picture: dict, direction, start_coordinates, offs
         rotated_img = utils.rotate_image(image, angle)
         count = offset / width
 
-        choose = random.random() > 0.5
+        choose = random.random() > 0.23
+        print("当前概率：", choose)
+        # True的概率大，False的概率小
 
         cropped_count = math.ceil(count) if choose else math.floor(count)
-        next_offset = abs(cropped_count - count)
-
+        next_offset = cropped_count - count if choose else count - cropped_count
+        print("截取数量{}， 真实数量{}， 下一次偏移{}".format(cropped_count, count, next_offset))
         if "L" == direction:
+            print(start_coordinates)
             print("A", start_coordinates[1], start_coordinates[1] + length, start_coordinates[0] - width * cropped_count, start_coordinates[0])
             cropped_img = rotated_img[start_coordinates[1]: start_coordinates[1] + length, start_coordinates[0] - width * cropped_count: start_coordinates[0]]
             start_coordinates[0] += int(-next_offset * width if choose else next_offset * width)
@@ -115,7 +118,14 @@ def stitching_picture(group_of_picture: dict, direction, start_coordinates, offs
             target_image = np.concatenate((cropped_img, target_image), axis=1)
         else:
             target_image = cropped_img
+        # cv2.imshow('target', target_image)
+        # cv2.imshow('crop', cropped_img)
+        # cv2.imshow('src', rotated_img)
+        # key = cv2.waitKey(0)
+        # if key == 13:
+        #     continue
     print(target_image.shape)
+    cv2.imwrite('./result.jpg', target_image)
     cv2.imshow('result', target_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
@@ -200,3 +210,4 @@ if __name__ == '__main__':
         image_table.pop(item)
 
     stitching_picture(group_of_picture=image_table, direction="L", start_coordinates=start_coordinate, offset_table=left_offset_table, angle=ANGLE, width=width, length=length)
+
