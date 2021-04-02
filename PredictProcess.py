@@ -31,9 +31,9 @@ def predict_process(predictQueue, predictProcessFlag, sequenceFileName):
 
                     for i in range(const.PREDICT_DIRECTION_COUNT):
                         rotate_image = utils.rotate_image(image_data, const.PREDICT_ANGELS[i])
-                        # scale_image = utils.scale_image(rotate_image, const.PREDICT_SCALE[i])
+                        scale_image = utils.scale_image(rotate_image, const.PREDICT_SCALE[i])
                         for j in range(const.CROP_COUNT):
-                            cropped_region = rotate_image[absolute_locations[i][cur_image_index][1]:
+                            cropped_region = scale_image[absolute_locations[i][cur_image_index][1]:
                                                          absolute_locations[i][cur_image_index][1] + const.NEEDLE_GRID_HIGH,
                                                          absolute_locations[i][cur_image_index][0] + const.NEEDLE_GRID_WIDTH * j:
                                                          absolute_locations[i][cur_image_index][0] + const.NEEDLE_GRID_WIDTH * (j + 1)]

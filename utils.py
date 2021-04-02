@@ -57,6 +57,7 @@ def read_csv(file_path):
     return relative_coordinate
 
 
+# TODO: 后期模板比对逻辑需要基于实际模型来进行优化
 def compare(root_path, src_file_name, target_file_name):
     error_index = []
     try:
@@ -66,12 +67,12 @@ def compare(root_path, src_file_name, target_file_name):
             target_data = template.read()
     except Exception as error:
         return False, error_index, "读取文件错误, %s" % error
-    if len(src_data) != len(target_data):
+    if len(src_data) < len(target_data):
         return False, error_index, "两次编制针数不一致"
-    for i in range(len(src_data)):
+    for i in range(len(target_data)):
         if src_data[i] != target_data[i]:
             error_index.append(i)
-    ratio = (len(src_data) - len(error_index)) * 100 // len(src_data)
+    ratio = (len(target_data) - len(error_index)) * 100 // len(target_data)
     return True, error_index, ratio
 
 

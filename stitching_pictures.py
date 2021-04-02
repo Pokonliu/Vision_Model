@@ -118,79 +118,12 @@ def stitching_picture(group_of_picture: dict, direction, start_coordinates, offs
             target_image = np.concatenate((cropped_img, target_image), axis=1)
         else:
             target_image = cropped_img
-        # cv2.imshow('target', target_image)
-        # cv2.imshow('crop', cropped_img)
-        # cv2.imshow('src', rotated_img)
-        # key = cv2.waitKey(0)
-        # if key == 13:
-        #     continue
     print(target_image.shape)
     cv2.imwrite('./result.jpg', target_image)
     cv2.imshow('result', target_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     return target_image
-
-
-# file_224 = r"F:\learning\Data\t\temp\DLC224\R926.bmp"
-# file_232 = r"F:\learning\Data\t\temp\DLC232\R926.bmp"
-# file_240 = r"F:\learning\Data\t\temp\DLC240\R926.bmp"
-# file_248 = r"F:\learning\Data\t\temp\DLC248\R926.bmp"
-# file_256 = r"F:\learning\Data\t\temp\DLC256\R926.bmp"
-# # get_coordinate(file_224, ANGLE)
-#
-# hash_table = {"DLC224": file_224,
-#               "DLC232": file_232,
-#               "DLC240": file_240,
-#               "DLC248": file_248,
-#               "DLC256": file_256}
-#
-# data = pandas.read_csv("./left.csv")
-# print(data.head(5))
-#
-# offset_table = {}
-#
-# for index, item in data.iterrows():
-#     offset_table[item["file_name"]] = item["x_offset"]
-#
-# image = cv2.imread(r"F:\learning\Data\t\temp\DLC216\R926.bmp", cv2.IMREAD_COLOR)
-# r_img = utils.rotate_image(image, ANGLE)
-# cropped_img = r_img[start_coordinate[1]: start_coordinate[1] + length, start_coordinate[0]: start_coordinate[0] + 1]
-#
-# target_image = cropped_img
-#
-# for k, v in hash_table.items():
-#     print("当前图片:", k)
-#     image = cv2.imread(v, cv2.IMREAD_COLOR)
-#     r_img = utils.rotate_image(image, ANGLE)
-#
-#     offset = offset_table[k]
-#     print("偏移量:", offset)
-#
-#     count = offset / width
-#     print("偏移个数:", count)
-#
-#     # 取上整
-#     cropped_count = math.ceil(count)
-#     print("偏移个数取整:", cropped_count)
-#
-#     next_offset = cropped_count - count
-#     print("下次需要移动距离:", next_offset)
-#
-#     print("本次起点坐标:", start_coordinate)
-#     cropped_img = r_img[start_coordinate[1]: start_coordinate[1] + length, start_coordinate[0] - width * cropped_count: start_coordinate[0]]
-#     target_image = np.concatenate((cropped_img, target_image), axis=1)
-#     print("当前图片形状:", target_image.shape)
-#
-#     # 对下一次坐标修正
-#     start_coordinate[0] -= int(next_offset * width)
-#     print("下次起点坐标:", start_coordinate)
-#
-#     cv2.imshow("d", r_img)
-#     cv2.imshow("c", cropped_img)
-#     cv2.imshow("T", target_image)
-#     cv2.waitKey(0)
-#     cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':

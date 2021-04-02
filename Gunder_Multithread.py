@@ -82,7 +82,6 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         self.data_flow_thread.play_bar_widget_visible_signal.connect(self.play_bar_widget_visible_changed)
 
         # Training相关按键信号槽绑定
-        self.model_flag = True
         self.train_push_Button.clicked.connect(lambda: self.model_running("Template.txt"))
         self.predict_push_button.clicked.connect(lambda: self.predict_push_button_clicked("spin001.txt"))
         self.compare_push_button.clicked.connect(self.compare_push_button_clicked)
@@ -185,7 +184,6 @@ class MyWindow(QMainWindow, Ui_MainWindow):
     def model_running(self, sequence_save_file_name):
         if self.train_push_Button.isChecked():
             self.sequence_file_name.value = sequence_save_file_name
-            # 启动预测线程
             self.predict_process_flag.value = const.PREDICT_PROCESS_STARTING
         else:
             self.predict_process_flag.value = const.PREDICT_PROCESS_STOPPING
@@ -194,15 +192,16 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         if self.predict_push_button.isChecked():
             self.sequence_file_name.value = sequence_save_file_name
             self.predict_process_flag.value = const.PREDICT_PROCESS_STARTING
-            self.model_flag = False
         else:
             self.predict_process_flag.value = const.PREDICT_PROCESS_STOPPING
 
     # TODO: 后期需要加入选择模板的功能
     def compare_push_button_clicked(self):
         res, error_index, correct_rate = utils.compare('./temp/serializations', "spin001.txt", "Template.txt")
-        # QTableWidgetItem("{}%".format(correct_rate))
-        # self.predict_res_tableWidget.
+        cur_row = self.predict_res_tableWidget.rowCount() + 1
+        self.predict_res_tableWidget.setRowCount(cur_row)
+        newItem = QTableWidgetItem("{}%".format(correct_rate))
+        self.predict_res_tableWidget.setItem(cur_row - 1, 0, newItem)
 
     '''Video signal slot callback function'''
     # 视频播放信号槽回调函数
