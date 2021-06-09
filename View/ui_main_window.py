@@ -454,4 +454,4 @@ class Ui_MainWindow(object):
         self.About_action.setToolTip(_translate("MainWindow", "关于"))
         self.Login_action.setText(_translate("MainWindow", "登录"))
         self.Login_action.setToolTip(_translate("MainWindow", "登录"))
-import source.source
+import Source.source

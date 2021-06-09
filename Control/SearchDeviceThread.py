@@ -1,6 +1,9 @@
+# Third-party library
 import cv2.cv2 as cv2
-from PyQt5.QtCore import *
-from MvImport.MvCameraControl_class import *
+
+# User-defined library
+from PyQt5.QtCore import QThread
+from DataFlow.MvImport.MvCameraControl_class import *
 
 
 class SearchDeviceThread(QThread):
@@ -14,8 +17,6 @@ class SearchDeviceThread(QThread):
         self.adding_USB_camera_source()
         self.adding_GigE_camera_source()
 
-    # TODO USB 与 GiGE 协议的工业相机需要协同处理(重构adding_USB_camera_source与adding_GigE_camera_source函数)
-    # TODO 所有的输出打印都存入log文件中以用来后期Debug
     def adding_USB_camera_source(self):
         self.super_UI.camera_combo_box.addItem("")
         for i in range(5):

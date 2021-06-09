@@ -1,5 +1,8 @@
+# Third-party library
 from PyQt5.QtWidgets import *
-from ui_about import Ui_Dialog
+
+# User-defined library
+from View.ui_about import Ui_Dialog
 
 
 class AboutDialog(QDialog, Ui_Dialog):

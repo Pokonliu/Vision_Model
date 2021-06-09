@@ -1,5 +1,7 @@
 import cv2.cv2 as cv2
 
+from DataFlow.MvImport.MvCameraControl_class import *
+
 
 class Const(object):
     class ConsError(TypeError):
@@ -24,9 +26,6 @@ const.VIDEO_FASTER_CLICKED_FLAG = 1
 const.VIDEO_SLIDER_MOVED_FLAG = 2
 const.VIDEO_FRAME_SINGLE_STEP = 200
 
-const.VIDEO_PLAY = 1
-const.VIDEO_STOP = 0
-
 # Predict process params
 const.PREDICT_PROCESS_STARTING = 1
 const.PREDICT_PROCESS_STOPPING = 0
@@ -44,14 +43,14 @@ const.TOP_SIDE_ANGLE = 13
 const.SCALE_RATIO = 1
 const.FILLING_COLOR = 0
 const.CROP_COUNT = 4
-const.NEEDLE_GRID_WIDTH = 39
-const.NEEDLE_GRID_HIGH = 89
+const.NEEDLE_GRID_WIDTH = 32
+const.NEEDLE_GRID_HIGH = 90
 const.START_IMAGE_NUMBER_R = -2014
 const.START_IMAGE_NUMBER_L = 2128
 const.EACH_LINE_COUNTS = 529
 
 # Train params
-const.MODEL_PATH = "./stf_new_model/threeLayers.pb"
+const.PYTORCH_MODEL_PATH = "./PytorchPredict/ckpt/Shufflenet/model_best.pth"
 const.TF_MODEL_PATH = "./stf_new_model"
 const.PREDICT_DIRECTION_COUNT = 1
 const.PREDICT_ANGELS = [55.21826658383292, None, None]
@@ -84,6 +83,7 @@ const.SOURCE_TYPE_USB = 3
 const.SOURCE_TYPE_GIGE = 4
 
 # Serial port params
+const.SERIAL_PORT_STOP = 0
 const.SERIAL_PORT_IDLE = 1
 const.SERIAL_PORT_CHANGE = 2
 const.SERIAL_PORT_RUN = 3
@@ -97,4 +97,40 @@ const.SEARCHING_COMMAND = 3
 const.SEARCHING_DATA = 4
 
 # Camera param
-const.RESULTING_FRAME_RATE = 30
+const.TRIGGER_MODE_ON = MV_TRIGGER_MODE_ON
+const.TRIGGER_MODE_OFF = MV_TRIGGER_MODE_OFF
+const.FRAME_RATE_CONTROL_ON = True
+const.FRAME_RATE_CONTROL_OFF = False
+const.TRIGGER_SOURCE_LINE0 = MV_TRIGGER_SOURCE_LINE0
+const.TRIGGER_POLARITY_RISING_EDGE = 0
+const.ANTI_SHAKE_TIME = 1
+const.GEV = 100
+const.EXPOSURE_TIME = 100.0
+const.CACHE_CAPACITY = 400
+
+# setting button mask
+const.IMAGE_BUTTON_MASK = 1
+const.VIDEO_BUTTON_MASK = 2
+const.CAMERA_BUTTON_MASK = 4
+
+# V2S information type
+const.CLOSE_SERIAL_PORT = 1
+const.OPEN_SERIAL_PORT = 2
+
+# D2V information type
+const.STATUS_BAR_SHOW = 1
+const.CONTROL_BAR_VISIBLE = 2
+const.SLIDER_INIT = 3
+const.PLAY_BUTTON_TRIGGERED = 4
+const.TOTAL_FRAME = 5
+const.CURRENT_FRAME = 6
+const.SLIDER_VALUE = 7
+
+# V2D information type
+const.PLAY_STATUS = 8
+const.FASTER_TRIGGER = 9
+const.SLOWER_TRIGGER = 10
+const.SLIDER_TRIGGER = 11
+
+# 显示帧率
+const.DISPLAY_FRAME_RATE = 30

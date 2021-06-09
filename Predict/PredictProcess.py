@@ -1,15 +1,26 @@
+import os
 import numpy as np
-import tensorflow as tf
-import utils
-import Serialization
-from const import const
+from Common import utils
+from Control import Serialization
+from Common.const import const
+
+# predict_framework = "pytorch"
+# if predict_framework == "pytorch":
+#     import torch
+#     import torch.backends.cudnn as cudnn
+#     import torchvision
+#     from Predict.network import ShuffleNetV2
+# elif predict_framework == 'tensorflow':
+#     import tensorflow as tf
 
 
-def predict_process(predictQueue, predictProcessFlag, sequenceFileName):
+# TODO：兼容TF、Pytorch、TensorRT三种预测模式
+def PredictProcess(predictQueue, serialQueue, predictProcessFlag, sequenceFileName):
     print("Predict 进程开始执行")
     predict_queue = predictQueue
+    serial_queue = serialQueue
     serialization_process = Serialization.SerializationProcess()
-    net_work = tf.keras.models.load_model(filepath=const.TF_MODEL_PATH)
+    net_work = init_model(framework=predict_framework)
     predict_flag = predictProcessFlag
     sequence_file_name = sequenceFileName
     save_sequence_file_flag = False
@@ -21,7 +32,8 @@ def predict_process(predictQueue, predictProcessFlag, sequenceFileName):
                 save_sequence_file_flag = True
                 if not predict_queue.empty():
                     print("queue:", predict_queue.qsize())
-                    image_data, direction, row, col = predict_queue.get()
+                    image_data = predict_queue.get()
+                    direction, row, col = serial_queue.get()
                     cur_image_index = 0
                     if direction == "R":
                         cur_image_index = (col - const.START_IMAGE_NUMBER_R) // 8
@@ -31,17 +43,16 @@ def predict_process(predictQueue, predictProcessFlag, sequenceFileName):
 
                     for i in range(const.PREDICT_DIRECTION_COUNT):
                         rotate_image = utils.rotate_image(image_data, const.PREDICT_ANGELS[i])
-                        scale_image = utils.scale_image(rotate_image, const.PREDICT_SCALE[i])
                         for j in range(const.CROP_COUNT):
-                            cropped_region = scale_image[absolute_locations[i][cur_image_index][1]:
-                                                         absolute_locations[i][cur_image_index][1] + const.NEEDLE_GRID_HIGH,
-                                                         absolute_locations[i][cur_image_index][0] + const.NEEDLE_GRID_WIDTH * j:
-                                                         absolute_locations[i][cur_image_index][0] + const.NEEDLE_GRID_WIDTH * (j + 1)]
+                            cropped_region = rotate_image[absolute_locations[i][cur_image_index][1]:
+                                                          absolute_locations[i][cur_image_index][1] + const.NEEDLE_GRID_HIGH,
+                                                          absolute_locations[i][cur_image_index][0] + const.NEEDLE_GRID_WIDTH * j:
+                                                          absolute_locations[i][cur_image_index][0] + const.NEEDLE_GRID_WIDTH * (j + 1)]
                             epoch_image_list.append(cropped_region)
 
                 if len(epoch_image_list) > 500:
                     images = np.array(epoch_image_list)
-                    predict_output = net_work.predict(images)
+                    predict_output = predict(framework=predict_framework, model=net_work, images=images)
                     predict_category = np.argmax(predict_output, axis=1)
                     serialization_process.adding_sequence("".join([str(x) for x in predict_category.tolist()]))
                     epoch_image_list = []
@@ -82,3 +93,61 @@ def init_absolute_coordinate():
         start_coordinate_y = const.START_IMAGE_COORDINATE_Y
         result.append(calculate_absolute_coordinate(img_index, img_direction, start_coordinate_x, start_coordinate_y, utils.read_csv(const.COORDINATE_FILES[i])))
     return result
+
+
+def init_model(framework):
+    if framework == "tensorflow":
+        model = tf.keras.models.load_model(filepath=const.TF_MODEL_PATH)
+    elif framework == "pytorch":
+        cudnn.benchmark = True
+        model = ShuffleNetV2(model_size="1.5x")
+        checkpoint = torch.load(const.PYTORCH_MODEL_PATH)
+        if "state_dict" in checkpoint:
+            checkpoint = checkpoint["state_dict"]
+
+        model.load_state_dict({k.replace("module.", ""): v for k, v in checkpoint.items()})  # strip the names
+
+        if torch.cuda.is_available():
+            model = model.cuda()
+
+        model.eval()
+    return model
+
+
+def predict(framework, model, images):
+    if framework == "tensorflow":
+        res = model.predict(images)
+    else:
+        res = model(images)
+    return res
+
+
+if __name__ == '__main__':
+    import time
+    import cv2.cv2 as cv2
+    m = init_model(predict_framework)
+    tran = torchvision.transforms.ToTensor()
+    start = time.time()
+    for root, dirs, files in os.walk(r"C:\Users\AR-LAB\Desktop\data and code\data\original_stitch\train\1"):
+        images = []
+        for file in files:
+            target_image_path = os.path.join(root, file)
+            images.append(tran(cv2.imread(target_image_path, cv2.IMREAD_COLOR)))
+            # img = tran(cv2.imread(target_image_path, cv2.IMREAD_COLOR))
+            # img = torch.unsqueeze(img, 0)
+            # img = img.cuda()
+            # res = predict(predict_framework, m, img)
+            # print(res)
+
+            if len(images) == 500:
+                images = torch.tensor([item.cpu().detach().numpy() for item in images]).cuda()
+                # images = np.array(images)
+                # images = tran(images)
+                res = predict(predict_framework, m, images)
+                print(res.shape)
+                # predict_category = np.argmax(res, axis=1)
+                # print(predict_category)
+                images = []
+    end = time.time()
+    print("Pytorch predict 1 image each group spend:{}".format(end - start))
+

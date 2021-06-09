@@ -1,10 +1,28 @@
 """
 Common utility functions
 """
+# Third-party library
 import os
 import math
 import cv2.cv2 as cv2
 import pandas as pd
+from PyQt5 import QtGui
+from PyQt5.QtCore import QRegExp, Qt
+from PyQt5.QtGui import QPixmap, QImage
+
+
+def make_dir(file_name):
+    save_root = os.path.join(os.getcwd(), file_name)
+    if not os.path.exists(save_root):
+        os.mkdir(save_root)
+    return save_root
+
+
+def regex_init(regular_expression):
+    regex = QRegExp(regular_expression)
+    regex_instance = QtGui.QRegExpValidator()
+    regex_instance.setRegExp(regex)
+    return regex_instance
 
 
 def split_hex(hex_str):
@@ -82,3 +100,8 @@ def save_image_by_needle(image, direction, col, row):
     if not os.path.exists(default_path):
         os.makedirs(default_path)
     cv2.imwrite(os.path.join(default_path, "R{}.bmp".format(row)), image)
+
+
+def show_image_to_label(src, label, flag=None):
+    frame_QPixmap = QPixmap.fromImage(QImage(cv2.cvtColor(src, flag) if flag else src, src.shape[1], src.shape[0], QImage.Format_RGB888))
+    label.setPixmap(frame_QPixmap.scaled(label.width(), label.height(), Qt.KeepAspectRatio))

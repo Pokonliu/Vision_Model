@@ -2,8 +2,8 @@
 # flags '-c -d -v C:\test_h\CameraParams.xml -o CameraParams_header.py'
 from ctypes import *
 from enum import Enum
-from MvImport.CameraParams_const import *
-from MvImport.PixelType_header import *
+from DataFlow.MvImport.CameraParams_const import *
+from DataFlow.MvImport.PixelType_header import *
 
 STRING = c_char_p
 
