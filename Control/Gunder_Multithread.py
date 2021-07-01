@@ -7,7 +7,6 @@ from ctypes import c_char_p
 from multiprocessing import Value, Queue, Manager, Pipe
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
 
 # User-defined library
 from Common import utils
@@ -17,9 +16,8 @@ from Control.SettingDialog import SettingDialog
 from Control.AboutDialog import AboutDialog
 from DataFlow.SerialPortProcess import SerialPortProcess
 from DataFlow.DataFlowProcess import DataFlowProcess
-from Predict.PredictProcess import PredictProcess
 from Control.DataHandleThread import DataHandleThread, ControlHandleThread
-from Control.IOProcess import IOProcess
+from Control.ModeProcess import ModeProcess
 
 
 class MyWindow(QMainWindow, Ui_MainWindow):
@@ -62,11 +60,12 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         # --进程间参数队列
         self.v2s_params_dict = Manager().dict()
         self.v2d_params_str = Manager().Value(c_char_p, "")
+        self.v2p_params_str = Manager().Value(c_char_p, "")
 
         # --进程间控制标志位
         self.v2s_control_flag = Value('i', const.SERIAL_PORT_IDLE)
         self.v2d_control_flag = Value('i', const.DATA_FLOW_IDLE)
-        self.v2p_control_flag = Value('i', 0)
+        self.v2p_control_flag = Value('i', const.IDLE_MODE)
 
         # --进程间控制管道
         # V与S之间的管道
@@ -93,13 +92,13 @@ class MyWindow(QMainWindow, Ui_MainWindow):
                                                  dv_control_pipe=self.dv_control_pipe)
         self.data_flow_process.open()
 
-        # 预测进程初始化
-        # self.predict_process = PredictProcess()
+        # 主模式进程初始化
+        self.mode_process = ModeProcess(s2p_queue=self.s2p_data_queue,
+                                        d2p_queue=self.d2p_data_queue,
+                                        v2p_control_flag=self.v2p_control_flag,
+                                        v2p_params_str=self.v2p_params_str)
 
-        # 截图进程初始化(后期废弃)
-        self.io_process = IOProcess(s2p_queue=self.s2p_data_queue,
-                                    d2p_queue=self.d2p_data_queue)
-        self.io_process.open()
+        self.mode_process.open()
 
         # 界面处理数据队列线程初始化
         self.DataHandleThread = DataHandleThread(self)
@@ -129,9 +128,9 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         self.video_progress_slider.sliderMoved.connect(self.video_slider_moved)
 
         # Training相关按键信号槽绑定
-        self.train_push_Button.clicked.connect(lambda: self.model_running("Template.txt"))
-        self.predict_push_button.clicked.connect(lambda: self.predict_push_button_clicked("spin001.txt"))
-        self.compare_push_button.clicked.connect(self.compare_push_button_clicked)
+        self.train_push_Button.clicked.connect(self.mode_switch_make_table)
+        self.predict_push_button.clicked.connect(self.mode_make_template)
+        self.compare_push_button.clicked.connect(self.mode_switch_io)
 
     def input_source_changed(self, source):
         if self.v2d_params_str.value != source:
@@ -206,6 +205,15 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         self.clicked_flag = flag
 
     '''Model train/predict/compare signal slot callback function'''
+    def mode_switch_make_table(self):
+        self.v2p_control_flag.value = const.MAKE_TABLE_MODE
+
+    def mode_switch_io(self):
+        self.v2p_control_flag.value = const.IO_WRITE_MODE
+
+    def mode_make_template(self):
+        self.v2p_control_flag.value = const.MAKE_TEMPLATE_MODE
+
     def model_running(self, sequence_save_file_name):
         if self.train_push_Button.isChecked():
             self.sequence_file_name.value = sequence_save_file_name
@@ -268,8 +276,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):
         time.sleep(0.1)
         self.serial_port_process.close()
         self.data_flow_process.close()
-        # TODO:测试结束后删除
-        self.io_process.close()
+        self.mode_process.close()
 
     def send_data_to_serial_port(self):
         try:

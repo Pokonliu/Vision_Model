@@ -67,7 +67,7 @@ class SerialPortReceive(threading.Thread):
             self.communication_flag = const.SEARCHING_DATA
 
     def searching_data(self):
-        res, data = self.serial_port.read(self.data_length)
+        res, data = self.serial_port.read(self.data_length + 1)
         if res:
             row = int.from_bytes(data[: 4], byteorder='big', signed=False)
             col = int.from_bytes(data[4: 6], byteorder='big', signed=True)
@@ -85,7 +85,7 @@ class SerialPortReceive(threading.Thread):
             self.serial_queue.put([direction, row, col])
             self.serial_upload_queue.put([data.hex(), analyze])
             # TODO：测试代码，后期删除
-            self.serial_receive_cnt += 1
+            # self.serial_receive_cnt += 1
             # print("Serial receive count: {}, data:{}".format(self.serial_receive_cnt, analyze))
 
             self.data_length = 0
@@ -172,28 +172,3 @@ class SerialPortProcess:
                     sv_control_pipe.send(["S2V", const.CLOSE_SERIAL_PORT, True, "Serial port close successfully"])
                     serial_port_flag.value = const.SERIAL_PORT_IDLE
                 # TODO:后续可以扩展其他控制信息
-
-
-
-# if __name__ == '__main__':
-#     v2s_queue_T = multiprocessing.Queue()
-#     s2p_queue_T = multiprocessing.Queue()
-#     serial_port_flag_T = multiprocessing.Value('i', 1)
-#     serial_init_params_T = multiprocessing.Manager().dict({"com": "COM2", "baud_rate": 256000, "byte_size": 8, "stop_bits": 1})
-#
-#     SP = SerialPortProcess(v2s_queue_T, s2p_queue_T, serial_port_flag_T, serial_init_params_T)
-#     SP.open()
-#     time.sleep(2)
-#     serial_port_flag_T.value = const.SERIAL_PORT_CHANGE
-#
-#     while True:
-#         for i in range(10):
-#             time.sleep(0.5)
-#             v2s_queue_T.put(bytes.fromhex("ABCDEF1216487ACB"))
-#         else:
-#             serial_init_params_T["baud_rate"] = 9600
-#             serial_port_flag_T.value = const.SERIAL_PORT_CHANGE
-#         # 模拟串口更新
-#         for i in range(1000):
-#             time.sleep(0.5)
-#             v2s_queue_T.put(bytes.fromhex("ABCDEF1216487ACB"))

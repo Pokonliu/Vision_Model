@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import cv2.cv2 as cv2
-import utils
+import Common.utils
 import pandas
 import math
 import random
@@ -129,7 +129,7 @@ def stitching_picture(group_of_picture: dict, direction, start_coordinates, offs
 if __name__ == '__main__':
     left_offset_table = get_offset_table("./Template/left.csv")
     right_offset_table = get_offset_table("./Template/right.csv")
-    image_table = get_group_image(root_path=r"F:\learning\Data\t\temp", start_index=-2104, cycle=8, line_num=928, direction="L")
+    image_table = get_group_image(root_path=r"E:\NAR\Predict\MODEL", start_index=-2104, cycle=1, line_num=2942, direction="L")
     invalid_image_list = []
     start_coordinate = None
     for dir_name, img in image_table.items():

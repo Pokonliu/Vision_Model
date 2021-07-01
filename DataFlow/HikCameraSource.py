@@ -134,13 +134,13 @@ class HikCamera:
         ret = self.camera_instance.MV_CC_GetOneFrameTimeout(self.data_buf, self.payload_size, self.frame_info, 1000)
         if ret == 0:
             # 处理灰度图像
-            if self.Is_mono_data(self.pixel_format):
-                self.img_data = self.Mono_numpy(self.data_buf, self.frame_info.nWidth, self.frame_info.nHeight)
+            if 0x01080001 == self.pixel_format:
+                self.img_data = np.array(self.data_buf).reshape(self.frame_info.nHeight, self.frame_info.nWidth)
+            # if self.Is_mono_data(self.pixel_format):
+            #     self.img_data = self.Mono_numpy(self.data_buf, self.frame_info.nWidth, self.frame_info.nHeight)
             # 处理彩色图像
             elif self.Is_color_data(self.pixel_format):
                 self.img_data = self.Color_numpy(self.data_buf, self.frame_info.nWidth, self.frame_info.nHeight)
-        else:
-            print("no data, ret = [0x%x]" % ret)
         return not ret, self.img_data
 
     def release(self):

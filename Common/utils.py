@@ -105,3 +105,18 @@ def save_image_by_needle(image, direction, col, row):
 def show_image_to_label(src, label, flag=None):
     frame_QPixmap = QPixmap.fromImage(QImage(cv2.cvtColor(src, flag) if flag else src, src.shape[1], src.shape[0], QImage.Format_RGB888))
     label.setPixmap(frame_QPixmap.scaled(label.width(), label.height(), Qt.KeepAspectRatio))
+
+
+def sort_file(file_path, target_row, mask_count):
+    ordered_file_name = [0] * mask_count
+
+    for root, dirs, files in os.walk(file_path):
+        for file in files:
+            _, row, index = file[:-4].split('_')
+            if target_row in row and isinstance(ordered_file_name[int(index)], int):
+                ordered_file_name[int(index)] = file
+    return ordered_file_name
+
+
+if __name__ == '__main__':
+    print(sort_file(r"E:\clip\data", "398", 600))

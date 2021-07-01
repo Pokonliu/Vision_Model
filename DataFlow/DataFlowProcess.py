@@ -119,7 +119,7 @@ class DataFlowProcess:
             nonlocal source_name
             nonlocal source_control_flag
             data_instance = HikCamera(device_name=int(source_name.value.split()[1]),
-                                      trigger_mode=const.TRIGGER_MODE_OFF,
+                                      trigger_mode=const.TRIGGER_MODE_ON,
                                       frame_rate_control=const.FRAME_RATE_CONTROL_OFF,
                                       trigger_source=const.TRIGGER_SOURCE_LINE0,
                                       trigger_polarity=const.TRIGGER_POLARITY_RISING_EDGE,
