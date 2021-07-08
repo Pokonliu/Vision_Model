@@ -5,8 +5,8 @@ import datetime
 import tensorflow as tf
 from tqdm import tqdm
 
-from Predict.EfficientNetV2 import efficientnetv2_s as create_model
-from Predict.util import generate_ds
+from Predict.Tensorflow_EfficientNetV2.EfficientNetV2 import efficientnetv2_s as create_model
+from Predict.Tensorflow_EfficientNetV2.util import generate_ds
 
 assert tf.version.VERSION >= "2.4.0", "version of tf must greater/equal than 2.4.0"
 
@@ -22,8 +22,8 @@ def main():
                 "l": [384, 480]}
     num_model = "s"
 
-    batch_size = 32
-    epochs = 80
+    batch_size = 16
+    epochs = 30
     num_classes = 3
     initial_lr = 0.01
 
@@ -37,7 +37,8 @@ def main():
                                    train_im_width=img_size[num_model][0],
                                    val_im_height=img_size[num_model][1],
                                    val_im_width=img_size[num_model][0],
-                                   batch_size=batch_size)
+                                   batch_size=batch_size,
+                                   cache_data=True)
 
     # create model
     model = create_model(num_classes=num_classes)

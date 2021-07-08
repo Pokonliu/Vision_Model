@@ -1,4 +1,5 @@
 import os
+import math
 import pandas
 import numpy as np
 import cv2.cv2 as cv2
@@ -39,19 +40,19 @@ class ModeProcess:
         sequence_file_name = v2p_params_str
 
         # 制作偏移表参数
-        pre_row = -1
-        make_table_flag = False
-        loop_count = 0
+        get_in_row = None
+        get_in_direction = None
+        params_table = self.init_csv(predict_flag)
+
         shift_count = 1
         stitch_index = 0
         start_x = None
-        start_flag = False
+        valid_flag = False
 
-        # 预测、制作模板参数
-        epoch_image_list = [0 for _ in range(const.TOTAL_NEEDLE_GRID_COUNT)]
+        position_dict = {"last": 0, "cur": 0}
+        epoch_image_list = [np.zeros((const.NEEDLE_GRID_HIGH, 1)) for _ in range(const.TOTAL_NEEDLE_GRID_COUNT)]
 
         # 初始化
-        csv_files = self.init_csv()
         net_work = self.init_model(framework=predict_framework)
         serialization_process = Serialization.SerializationProcess()
 
@@ -71,37 +72,55 @@ class ModeProcess:
                 elif predict_flag.value == const.IO_WRITE_MODE:
                     utils.save_image_by_needle(image_data, direction, col, row)
 
+                # 自动校准模式
+                elif predict_flag.value == const.AUTO_CALIBRATION:
+                    # TODO:此处逻辑待定，检测三光路是否需要循环三次
+                    print("get into AUTO CALIBRATION")
+                    success_count = 0
+                    for i in range(const.PREDICT_DIRECTION_COUNT):
+                        res, real_angle, real_midline = self.Auto_calibration(image_data)
+                        print("成功检测出中线和旋转角度：", res, real_angle, real_midline)
+                        if res:
+                            success_count += 1
+                            data = pandas.DataFrame({"position": "ALL", "angle": real_angle, "midline": real_midline},
+                                                    columns=["position", "x_coordinate", "shift_count", "index", "angle", "midline"], index=[0])
+                            data.to_csv(const.SHIFT_TABLE_FILES[i], mode="a", index=False, header=False)
+                            params_table[i]["angle"] = real_angle
+                            params_table[i]["midline"] = real_midline
+                    if success_count == const.PREDICT_DIRECTION_COUNT:
+                        predict_flag.value = const.MAKE_TABLE_MODE
+
                 # 制作偏移表模式
                 elif predict_flag.value == const.MAKE_TABLE_MODE:
-                    print("get into make table")
-                    if pre_row == -1:
-                        pre_row = row
-                    elif row != pre_row:
-                        loop_count += 1
-                        pre_row = row
-                        make_table_flag = True
+                    print("get into make table", get_in_row, get_in_direction, row)
+                    # 跳过非完整行
+                    if not isinstance(get_in_row, int) and not isinstance(get_in_direction, int) and direction == "L":
+                        get_in_row = row
+                        get_in_direction = direction
 
-                    if loop_count == 3:
-                        make_table_flag = False
-                        csv_files = self.init_csv()
-                        predict_flag.value = const.IDLE_MODE
+                    if isinstance(get_in_row, int) and row - get_in_row == 3:
+                        params_table = self.init_csv(predict_flag)
                         print("制作偏移表完成")
 
-                    if make_table_flag:
+                    if isinstance(get_in_row, int) and 1 <= row - get_in_row < 3:
+                        # TODO：读写CSV是否可以优化，每次写一行与缓存完所有数据一次写入的差异待测
                         for i in range(const.PREDICT_DIRECTION_COUNT):
                             # 参数初始化
                             continue_flag = False
                             x_coordinate = []
                             x_k_means = []
 
-                            rotate_img = utils.rotate_image(image_data, const.SPIN_ANGELS[i])
-                            window_img = rotate_img[const.WINDOW_X0: const.WINDOW_X1, const.WINDOW_Y0: const.WINDOW_Y1]
+                            rotate_img = utils.rotate_image(image_data, params_table[i]["angle"])
+                            window_img = rotate_img[params_table[i]["midline"] - const.WINDOW_X0_OFFSET:
+                                                    params_table[i]["midline"] - const.WINDOW_X1_OFFSET,
+                                                    const.WINDOW_Y0:
+                                                    const.WINDOW_Y1]
 
                             # TODO:OpenCV超参的魔鬼数字后期移入const中
                             # 二值化
                             _, window_img = cv2.threshold(window_img, thresh=110, maxval=255, type=cv2.THRESH_BINARY)
                             # 边缘检测
-                            edge_img = cv2.Canny(window_img, threshold1=100, threshold2=200)
+                            edge_img = cv2.Canny(window_img, threshold1=110, threshold2=200)
                             # 霍夫直线检测
                             lines = cv2.HoughLinesP(edge_img, rho=1, theta=np.pi / 180, threshold=10, lines=0, minLineLength=10, maxLineGap=10)
 
@@ -128,19 +147,12 @@ class ModeProcess:
                                             x_k_means.append([x, [x]])
                             true_center = self.center_filter([x_c[0] for x_c in x_k_means])
 
-                            # TODO: 进行二次检测，对一些异常center进行筛除
-                            # TODO: 第一次检测出边缘就会进入该执行逻辑
-                            # TODO: 第一次不允许在视野中出现梭子
                             if 10 >= len(x_k_means) >= 2 and 5 >= len(true_center) >= 2 and not continue_flag:
-                                if start_flag:
-                                    start_x = true_center[0] + const.WINDOW_Y0 if direction == "R" else true_center[-1] + const.WINDOW_Y0
-                                else:
+                                valid_flag = True
+                                if isinstance(start_x, float):
                                     start_x = self.search(true_center, start_x - const.WINDOW_Y0) + const.WINDOW_Y0
-
-                                # 写入CSV
-                                data = pandas.DataFrame({"position": "D%sC%d" % (direction, col), "x_coordinate": start_x, "shift_count": shift_count, "stitch_index": stitch_index},
-                                                        columns=["position", "x_coordinate", "shift_count", "stitch_index"], index=[0])
-                                data.to_csv(const.SHIFT_TABLE_FILES[i], mode="a", index=False, header=False)
+                                else:
+                                    start_x = true_center[0] + const.WINDOW_Y0 if direction == "R" else true_center[-1] + const.WINDOW_Y0
 
                                 if direction == "R":
                                     # 预算移动是否会超出窗口
@@ -148,8 +160,6 @@ class ModeProcess:
                                         shift_count = 1
                                     elif const.WINDOW_Y0 + 32 > start_x + shift_count * const.NEEDLE_GRID_WIDTH - const.RELATIVE_OFFSET:
                                         shift_count = 2
-                                    # 修改下一次起始位置
-                                    start_x = start_x + shift_count * const.NEEDLE_GRID_WIDTH - const.RELATIVE_OFFSET
 
                                 elif direction == "L":
                                     # 预算移动是否会超出窗口
@@ -157,39 +167,44 @@ class ModeProcess:
                                         shift_count = 2
                                     elif const.WINDOW_Y0 + 32 > start_x - shift_count * const.NEEDLE_GRID_WIDTH + const.RELATIVE_OFFSET:
                                         shift_count = 1
-                                    # 修改下一次起始位置
-                                    start_x = start_x - shift_count * const.NEEDLE_GRID_WIDTH + const.RELATIVE_OFFSET
 
-                                stitch_index += shift_count * (1 if direction == "R" else -1)
-                                start_flag = False
-                            else:
-                                # TODO：非工作区域，或者计算出现异常可能会（需要实际测试）
-                                data = pandas.DataFrame({"position": "D%sC%d" % (direction, col), "x_coordinate": 'invalid', "shift_count": "invalid", "stitch_index": "valid"},
-                                                        columns=["position", "x_coordinate", "shift_count", "index"], index=[0])
+                                data = pandas.DataFrame({"position": "D%sC%d" % (direction, col), "x_coordinate": start_x, "shift_count": shift_count, "stitch_index": stitch_index},
+                                                        columns=["position", "x_coordinate", "shift_count", "stitch_index", "angle", "midline"], index=[0])
                                 data.to_csv(const.SHIFT_TABLE_FILES[i], mode="a", index=False, header=False)
-                                start_flag = True
+                                # 修改下一次起始位置
+                                start_x = start_x + (1 if direction == "R" else -1) * (shift_count * const.NEEDLE_GRID_WIDTH - const.RELATIVE_OFFSET)
+                                # 更新下一次索引
+                                stitch_index += (1 if direction == "R" else -1) * shift_count
+                            else:
+                                data = pandas.DataFrame({"position": "D%sC%d" % (direction, col), "x_coordinate": 'invalid', "shift_count": "invalid", "stitch_index": "invalid"},
+                                                        columns=["position", "x_coordinate", "shift_count", "stitch_index", "angle", "midline"], index=[0])
+                                data.to_csv(const.SHIFT_TABLE_FILES[i], mode="a", index=False, header=False)
+                                # TODO:修改结尾处的数据
+                                if valid_flag:
+                                    stitch_index -= shift_count
+                                    valid_flag = False
+                                start_x = None
 
                 # 制作模板模式
                 elif predict_flag.value == const.MAKE_TEMPLATE_MODE:
                     # 逻辑与预测模式一样，只是增加了最后写模板的步骤
-                    # TODO：目前测试行图像的切割是否精确
-                    if pre_row == -1:
-                        pre_row = row
-                    elif row != pre_row:
-                        cv2.imwrite("./TROW-{}.jpg".format(pre_row), np.hstack(epoch_image_list))
-                        # TODO：epoch_image_list应该如何更新待定
-                        epoch_image_list = [0 for _ in range(const.TOTAL_NEEDLE_GRID_COUNT)]
-                        pre_row = row
+                    if not isinstance(get_in_row, int):
+                        get_in_row = row
+                    elif row != get_in_row:
+                        print(position_dict["last"], position_dict["cur"])
+                        if position_dict["last"] != position_dict["cur"]:
+                            cv2.imwrite("./TROW-{}.jpg".format(get_in_row), np.hstack(epoch_image_list[min(position_dict["cur"], position_dict["last"]): max(position_dict["cur"], position_dict["last"])]))
+                        position_dict["last"] = position_dict["cur"]
+                        get_in_row = row
                     if direction in ["R", "L"]:
-                        self.split_image(image_data, direction, col, csv_files, epoch_image_list)
+                        self.split_image(image_data, direction, col, params_table, epoch_image_list, position_dict)
 
                 # 预测模式
                 elif predict_flag.value == const.PREDICT_MODE:
                     # 逻辑与制作模板一样，只是增加了最后的比对的步骤
                     # TODO:需要按照模板来设置数据格式,后期C++固化数据，通过掩码来获取相应的结果
-                    if row != pre_row:
-                        pass
-                    self.split_image(image_data, direction, col, csv_files, epoch_image_list)
+                    pass
+                    # self.split_image(image_data, direction, col, csv_files, epoch_image_list, position_dict)
 
     @staticmethod
     def init_model(framework):
@@ -210,14 +225,25 @@ class ModeProcess:
         return model
 
     @staticmethod
-    def init_csv():
-        csv_files = []
+    def init_csv(predict_flag):
+        res = []
         for i in range(const.PREDICT_DIRECTION_COUNT):
+            angle = 0
+            midline = 0
             if not os.path.exists(const.SHIFT_TABLE_FILES[i]):
-                data = pandas.DataFrame(columns=["position", "x_coordinate", "shift_count", "stitch_index"])
+                data = pandas.DataFrame(columns=["position", "x_coordinate", "shift_count", "stitch_index", "angle", "midline"])
                 data.to_csv(const.SHIFT_TABLE_FILES[i], mode="a", index=False, header=True)
-            csv_files.append(pandas.read_csv(const.SHIFT_TABLE_FILES[i]))
-        return csv_files
+                csv_file = pandas.read_csv(const.SHIFT_TABLE_FILES[i])
+                # TODO: 逻辑待优化，模式需要外部触发
+                predict_flag.value = const.AUTO_CALIBRATION
+            else:
+                csv_file = pandas.read_csv(const.SHIFT_TABLE_FILES[i])
+                row_index = csv_file[csv_file.position == "ALL"].index.tolist()
+                angle = float(csv_file.loc[row_index, "angle"].values)
+                midline = round(float(csv_file.loc[row_index, "midline"].values))
+                predict_flag.value = const.IDLE_MODE
+            res.append({"csv_file": csv_file, "angle": angle, "midline": midline})
+        return res
 
     @staticmethod
     def search(group, target):
@@ -247,7 +273,7 @@ class ModeProcess:
             cur_p, next_p = queue.popleft()
             if next_p >= len(center_set):
                 continue
-            if 34 >= center_set[next_p] - center_set[cur_p] >= 27:
+            if 37 >= center_set[next_p] - center_set[cur_p] >= 26:
                 true_center.append(center_set[cur_p])
                 if next_p == len(center_set) - 1:
                     true_center.append(center_set[next_p])
@@ -269,31 +295,134 @@ class ModeProcess:
         return res
 
     @staticmethod
-    def split_image(image, direction, col, csv_files, container):
+    def split_image(image, direction, col, params_table, container, position):
         for i in range(const.PREDICT_DIRECTION_COUNT):
-            rotate_image = utils.rotate_image(image, const.SPIN_ANGELS[i])
+            rotate_image = utils.rotate_image(image, params_table[i]["angle"])
 
-            x_coordinate = csv_files[i][csv_files[i]["position"].isin(["D{}C{}".format(direction, col)])]["x_coordinate"].values
-            shift_count = csv_files[i][csv_files[i]["position"].isin(["D{}C{}".format(direction, col)])]["shift_count"].values
-            stitch_index = csv_files[i][csv_files[i]["position"].isin(["D{}C{}".format(direction, col)])]["stitch_index"].values
-            # TODO: y轴坐标如何自动确定
-            # TODO: 当角度发生变化如何修正
-            y_coordinate = 300
+            row_index = params_table[i]["csv_file"][params_table[i]["csv_file"].position == "D{}C{}".format(direction, col)].index.tolist()
+            if len(row_index) == 0:
+                print("当前位置不存在于偏移表中,D{}C{}".format(direction, col))
+                break
 
+            x_coordinate = params_table[i]["csv_file"].loc[row_index, "x_coordinate"].tolist()[0]
             if x_coordinate == "invalid":
-                continue
+                break
+            else:
+                x_coordinate = round(float(x_coordinate))
+            shift_count = int(params_table[i]["csv_file"].loc[row_index, "shift_count"].values)
+            stitch_index = int(params_table[i]["csv_file"].loc[row_index, "stitch_index"].values)
 
-            x_coordinate = int(float(x_coordinate))
-            for j in range(int(shift_count)):
+            # 记录每次截取的区域
+            position["cur"] = stitch_index + (1 if direction == "R" else -1) * shift_count
+
+            # TODO: 后期需要截取上下针排，目前只截取了下针排
+            y_coordinate = params_table[i]["midline"] - const.NEEDLE_GRID_HIGH
+
+            for j in range(shift_count):
                 if direction == "R":
                     cropped_region = rotate_image[y_coordinate:
                                                   y_coordinate + const.NEEDLE_GRID_HIGH,
                                                   x_coordinate + const.NEEDLE_GRID_WIDTH * j:
                                                   x_coordinate + const.NEEDLE_GRID_WIDTH * (j + 1)]
-                    container[int(stitch_index) + j] = cropped_region
+                    container[stitch_index + j] = cropped_region
                 elif direction == "L":
                     cropped_region = rotate_image[y_coordinate:
                                                   y_coordinate + const.NEEDLE_GRID_HIGH,
                                                   x_coordinate - const.NEEDLE_GRID_WIDTH * (j + 1):
                                                   x_coordinate - const.NEEDLE_GRID_WIDTH * j]
-                    container[int(stitch_index) - 1 - j] = cropped_region
+                    container[stitch_index - 1 - j] = cropped_region
+
+    @staticmethod
+    def Auto_calibration(src):
+        real_degree = 0
+        real_midline = 0
+
+        # 伽马变换
+        gamma = np.uint8(np.power(src / 255.0, 4) * 255.0)
+        # 直方图均衡化
+        equal = cv2.equalizeHist(gamma)
+        # 边缘检测
+        edge = cv2.Canny(equal, threshold1=100, threshold2=200)
+        # 霍夫线检测
+        lines = cv2.HoughLinesP(edge, rho=1, theta=np.pi / 180, threshold=50, lines=0, minLineLength=10, maxLineGap=20)
+        # 斜率检测
+        angle_list = []
+        if lines is not None:
+            for line in lines:
+                k = (line[0][3] - line[0][1]) / (line[0][2] - line[0][0])
+                degree = math.degrees(math.atan(k))
+                if 30 < degree < 45:
+                    angle_list.append(degree)
+        else:
+            print("1.This image couldn't find real midline,reason:HoughLinesP detect no line")
+            return False, real_degree, real_midline
+        if len(angle_list) == 0:
+            print("2.This image couldn't find real midline,reason:angle detection zero")
+            return False, real_degree, real_midline
+        real_degree = sum(angle_list) / len(angle_list) + 90
+
+        # 旋转图片
+        rotate = utils.rotate_image(edge, real_degree)
+        # 对旋转后的图片继续霍夫直线检测
+        lines = cv2.HoughLinesP(rotate, rho=1, theta=np.pi / 180, threshold=50, lines=0, minLineLength=10, maxLineGap=20)
+        # 直线域叠加
+        cluster_list = []
+        if lines is not None:
+            for line in lines:
+                # 过滤所有的垂线
+                if abs(line[0][1] - line[0][3]) <= 3 and abs(line[0][0] - line[0][2]) >= 5:
+                    continue
+                # swap
+                if line[0][1] > line[0][3]:
+                    line[0][1], line[0][3] = line[0][3], line[0][1]
+
+                if len(cluster_list) == 0:
+                    cluster_list.append([line[0][1], line[0][3]])
+                    continue
+                for cluster in cluster_list:
+                    if cluster[0] <= line[0][1] <= cluster[1] or cluster[0] <= line[0][3] <= cluster[1] or line[0][1] <= cluster[0] <= line[0][3] or line[0][1] <= cluster[1] <= line[0][3]:
+                        cluster[0] = min(cluster[0], line[0][1], line[0][3])
+                        cluster[1] = max(cluster[1], line[0][1], line[0][3])
+                        break
+                else:
+                    cluster_list.append([line[0][1], line[0][3]])
+        else:
+            print("3.This image couldn't find real midline,reason:HoughLinesP detect no line")
+            return False, real_degree, real_midline
+
+        if len(cluster_list) != 2:
+            print("4.This image couldn't find real midline,reason:cluster lens error {}".format(cluster_list))
+            return False, real_degree, real_midline
+        else:
+            rotate_src = utils.rotate_image(src, real_degree)
+            w, h = rotate_src.shape[:2]
+
+            y_coordinate = [y for c in cluster_list for y in c]
+            y_coordinate.sort()
+            ROI_top = y_coordinate[1] - 5
+            ROI_down = y_coordinate[2] + 5
+
+            # 获取ROI
+            roi = rotate_src[ROI_top: ROI_down, 0: h]
+            # 二值化
+            _, threshold = cv2.threshold(roi, thresh=25, maxval=255, type=cv2.THRESH_BINARY)
+            # 霍夫直线检测
+            lines = cv2.HoughLinesP(threshold, rho=1, theta=np.pi / 180, threshold=50, lines=0, minLineLength=10, maxLineGap=40)
+            if lines is not None:
+                line_y_cor = [(line[0][1] + line[0][3]) / 2 for line in lines]
+                line_y_cor.sort()
+            else:
+                print("5.This image couldn't find real midline,reason:HoughLinesP detect no line")
+                return False, real_degree, real_midline
+
+            for index in range(len(line_y_cor) - 1):
+                if 60 > line_y_cor[index + 1] - line_y_cor[index] > 40:
+                    real_ROI_top = line_y_cor[index]
+                    real_ROI_down = line_y_cor[index + 1]
+                    break
+            else:
+                print("6.This image couldn't find real midline,line gap error, {}".format(line_y_cor))
+                return False, real_degree, real_midline
+
+            real_midline = (real_ROI_top + real_ROI_down) / 2 + y_coordinate[1] - 5
+            return True, real_degree, real_midline

@@ -376,12 +376,12 @@ def efficientnetv2_s(num_classes: int = 1000):
     # train_size: 300, eval_size: 384
 
     # repeat, kernel, stride, expansion, in_c, out_c, operator, se_ratio
-    model_config = [[2, 3, 1, 1, 24, 24, 0, 0],
-                    [4, 3, 2, 4, 24, 48, 0, 0],
-                    [4, 3, 2, 4, 48, 64, 0, 0],
-                    [6, 3, 2, 4, 64, 128, 1, 0.25],
-                    [9, 3, 1, 6, 128, 160, 1, 0.25],
-                    [15, 3, 2, 6, 160, 256, 1, 0.25]]
+    model_config = [[1, 3, 1, 1, 24, 24, 0, 0],
+                    [2, 3, 2, 4, 24, 48, 0, 0],
+                    [2, 3, 2, 4, 48, 64, 0, 0],
+                    [2, 3, 2, 4, 64, 128, 1, 0.25],
+                    [4, 3, 1, 6, 128, 160, 1, 0.25],
+                    [4, 3, 2, 6, 160, 256, 1, 0.25]]
 
     model = EfficientNetV2(model_cnf=model_config,
                            num_classes=num_classes,

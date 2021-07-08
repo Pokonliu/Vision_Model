@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from Predict.blocks import ShuffleV2Block
+from Predict.ShuffleNetV2.blocks import ShuffleV2Block
 
 
 class ShuffleNetV2(nn.Module):

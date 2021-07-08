@@ -206,7 +206,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):
 
     '''Model train/predict/compare signal slot callback function'''
     def mode_switch_make_table(self):
-        self.v2p_control_flag.value = const.MAKE_TABLE_MODE
+        self.v2p_control_flag.value = const.AUTO_CALIBRATION
 
     def mode_switch_io(self):
         self.v2p_control_flag.value = const.IO_WRITE_MODE

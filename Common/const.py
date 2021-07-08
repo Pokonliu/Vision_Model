@@ -134,10 +134,11 @@ const.DISPLAY_FRAME_RATE = 30
 
 # control model
 const.IDLE_MODE = 0
-const.MAKE_TABLE_MODE = 1
-const.MAKE_TEMPLATE_MODE = 2
-const.PREDICT_MODE = 3
-const.IO_WRITE_MODE = 4
+const.AUTO_CALIBRATION = 1
+const.MAKE_TABLE_MODE = 2
+const.MAKE_TEMPLATE_MODE = 3
+const.PREDICT_MODE = 4
+const.IO_WRITE_MODE = 5
 
 # 制作偏移表参数
 const.PREDICT_DIRECTION_COUNT = 1
@@ -148,9 +149,11 @@ const.SPIN_ANGELS = [126.707959, None, None]
 const.IMAGE_SCALE = [1, None, None]
 const.SHIFT_TABLE_FILES = ["./Template/shift_table.csv", None, None]
 
-const.WINDOW_X0 = 235
-const.WINDOW_X1 = 275
-const.WINDOW_Y0 = 175
-const.WINDOW_Y1 = 327
+const.WINDOW_X0_OFFSET = 135
+const.WINDOW_X1_OFFSET = 95
+# Y轴的偏移应该需要根据实际光源来确定
+const.WINDOW_Y0 = 132
+const.WINDOW_Y1 = 284
 
-const.TOTAL_NEEDLE_GRID_COUNT = 628
+const.TOTAL_NEEDLE_GRID_COUNT = 640
+
